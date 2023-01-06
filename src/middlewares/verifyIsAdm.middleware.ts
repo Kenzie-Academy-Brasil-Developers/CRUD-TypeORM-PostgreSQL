@@ -1,17 +1,18 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import "dotenv/config";
 
-const verifyisAdmMiddleware = async (
+const verifyIsAdmMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   if (!req.user.isAdm) {
     return res.status(403).json({
-      message: "Unauthorized",
+      message: "Not authorized",
     });
   }
+
   return next();
 };
 
-export default verifyisAdmMiddleware;
+export default verifyIsAdmMiddleware;

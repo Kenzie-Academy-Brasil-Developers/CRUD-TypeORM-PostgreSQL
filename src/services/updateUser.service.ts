@@ -1,44 +1,41 @@
 import AppDataSource from "../data-source";
 import { User } from "../entities/user.entity";
 import { IUserUpdate } from "../interfaces/users/index";
-import { hash } from "bcrypt";
+import { userWithoutPasswordSerializer } from "../serializers/user.serializers";
+import { AppError } from "../errors/AppError";
 
-const updateUserService = async (
-  userUpdate: IUserUpdate,
-  id: string
-): Promise<User | Array<string | number>> => {
-  const { name, email, password } = userUpdate;
-
+const updateUserService = async (userData: IUserUpdate, userId: string) => {
   const userRepository = AppDataSource.getRepository(User);
 
   const findUser = await userRepository.findOneBy({
-    id,
+    id: userId,
   });
-
-  const keys = Object.keys(userUpdate);
+  const dataKeys = Object.keys(userData);
 
   if (!findUser) {
-    return ["User not found", 404];
+    throw new AppError("Unauthorized update", 404);
   }
 
   if (
-    keys.includes("isAdm") ||
-    keys.includes("isActive") ||
-    keys.includes("id")
+    dataKeys.includes("isAdm") ||
+    dataKeys.includes("isActive") ||
+    dataKeys.includes("id")
   ) {
-    return ["Unauthorized update (isAdm, isActive, id)", 401];
+    throw new AppError("Unauthorized update", 401);
   }
 
-  await userRepository.update(id, {
-    name: name ? name : findUser.name,
-    email: email ? email : findUser.email,
-    password: password ? await hash(password, 10) : findUser.password,
+  const updatedUser = userRepository.create({
+    ...findUser,
+    ...userData,
   });
+  await userRepository.save(updatedUser);
 
-  const user = await userRepository.findOneBy({
-    id,
-  });
+  const updatedUserWithoutPassword =
+    await userWithoutPasswordSerializer.validate(updatedUser, {
+      stripUnknown: true,
+    });
 
-  return user!;
+  return updatedUserWithoutPassword;
 };
+
 export default updateUserService;

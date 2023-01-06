@@ -1,18 +1,26 @@
 import AppDataSource from "../data-source";
+import { AppError } from "../errors/AppError";
 import { User } from "../entities/user.entity";
 
-const userDeleteService = async (id: string) => {
+const deleteUserService = async (userId: string) => {
   const userRepository = AppDataSource.getRepository(User);
-  const user = await userRepository.findOneBy({ id });
 
-  if (!user) {
-    throw new Error("User not found");
+  const findUser = await userRepository.findOneBy({
+    id: userId,
+  });
+
+  if (!findUser) {
+    throw new AppError("Unauthorized update", 404);
   }
 
-  await userRepository.update(id, {
+  if (findUser.isActive == false) {
+    throw new AppError("Unauthorized update", 400);
+  }
+  await userRepository.update(userId, {
     isActive: false,
   });
 
   return true;
 };
-export default userDeleteService;
+
+export default deleteUserService;

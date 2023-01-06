@@ -1,40 +1,44 @@
 import { Router } from "express";
-
-const routes = Router();
-
-import registerUserController from "../controllers/registerUser.controller";
-import deleteUserController from "../controllers/deleteUser.controller";
-import listUsersController from "../controllers/listUsers.controller";
-import updateUserController from "../controllers/updateUser.controller";
-import loginUserController from "../controllers/loginUser.controller";
-
+import registerUsercontroller from "../controllers/registerUser.controller";
+import listUserscontroller from "../controllers/listUsers.controller";
+import loginUsercontroller from "../controllers/loginUser.controller";
+import updateUsercontroller from "../controllers/updateUser.controller";
+import deleteUsercontroller from "../controllers/deleteUser.controller";
 import verifyAuthMiddleware from "../middlewares/verifyAuth.middleware";
-import verifyisAdmMiddleware from "../middlewares/verifyIsAdm.middleware";
+import verifyDataIsValideMiddleware from "../middlewares/verifyDataIsValide.middleware";
+import {
+  userSerializer,
+  userWithoutPasswordSerializer,
+} from "../serializers/user.serializers";
+import verifyIsAdmMiddleware from "../middlewares/verifyIsAdm.middleware";
 import verifyIsAdmUpdateMiddleware from "../middlewares/verifyIsAdmUpdate.middleware";
-import verifyOwnerMiddleware from "../middlewares/verifyIsOwner.middleware";
-import verifyStatusMiddleware from "../middlewares/verifyStatus.middleware";
 
-routes.post("/users", registerUserController);
-routes.post("/login", loginUserController);
-routes.get(
+const userRoutes = Router();
+
+userRoutes.post(
   "/users",
-  verifyAuthMiddleware,
-  verifyisAdmMiddleware,
-  listUsersController
+  verifyDataIsValideMiddleware(userSerializer),
+  registerUsercontroller
 );
-routes.patch(
+userRoutes.get(
+  "/users",
+  verifyDataIsValideMiddleware(userWithoutPasswordSerializer),
+  verifyAuthMiddleware,
+  verifyIsAdmMiddleware,
+  listUserscontroller
+);
+userRoutes.post("/login", loginUsercontroller);
+userRoutes.patch(
   "/users/:id",
   verifyAuthMiddleware,
   verifyIsAdmUpdateMiddleware,
-  updateUserController
+  updateUsercontroller
 );
-routes.delete(
+userRoutes.delete(
   "/users/:id",
   verifyAuthMiddleware,
-  verifyisAdmMiddleware,
-  verifyOwnerMiddleware,
-  verifyStatusMiddleware,
-  deleteUserController
+  verifyIsAdmMiddleware,
+  deleteUsercontroller
 );
 
-export default routes;
+export default userRoutes;

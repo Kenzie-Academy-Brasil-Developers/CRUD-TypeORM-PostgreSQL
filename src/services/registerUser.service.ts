@@ -1,37 +1,34 @@
+import { IUserRequest, IUser } from "../interfaces/users";
 import AppDataSource from "../data-source";
 import { User } from "../entities/user.entity";
-import { IUserRequest } from "../interfaces/users/index";
-import { hash } from "bcrypt";
+import { AppError } from "../errors/AppError";
+import { userWithoutPasswordSerializer } from "../serializers/user.serializers";
 
-const registerUserService = async ({
-  name,
-  email,
-  isAdm,
-  password,
-}: IUserRequest): Promise<User> => {
+const registerUserService = async (userData: IUserRequest): Promise<IUser> => {
   const userRepository = AppDataSource.getRepository(User);
 
-  if (!password) {
-    throw new Error("Password is missing");
-  }
+  const createdUser = userRepository.create(userData);
 
-  const hashedPassword = await hash(password, 10);
-
-  const users = await userRepository.find();
-  const emailAlreadyExists = users.find((user: any) => user.email === email);
+  const emailAlreadyExists = await userRepository.findOneBy({
+    email: userData.email,
+  });
 
   if (emailAlreadyExists) {
-    throw new Error("Email already exists");
+    throw new AppError("Email already exists", 400);
   }
 
-  const user = userRepository.create({
-    name,
-    email,
-    isAdm,
-    password: hashedPassword,
-  });
-  await userRepository.save(user);
+  if (!createdUser.password) {
+    throw new AppError("User or password invalid", 401);
+  }
 
-  return user;
+  await userRepository.save(createdUser);
+
+  const userWithoutPassword = await userWithoutPasswordSerializer.validate(
+    createdUser,
+    { stripUnknown: true }
+  );
+
+  return userWithoutPassword;
 };
+
 export default registerUserService;

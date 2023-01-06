@@ -1,26 +1,13 @@
 import { Request, Response } from "express";
+import { IUserRequest } from "../interfaces/users";
 import registerUserService from "../services/registerUser.service";
 
-const registerUserController = async (req: Request, res: Response) => {
-  try {
-    const { name, email, password, isAdm, createdAt, updatedAt } = req.body;
+const registerUsercontroller = async (req: Request, res: Response) => {
+  const userData: IUserRequest = req.body;
 
-    const newUser = await registerUserService({
-      name,
-      email,
-      password,
-      isAdm,
-    });
+  const newUser = await registerUserService(userData);
 
-    return res.status(201).send(newUser);
-  } catch (err) {
-    if (err instanceof Error) {
-      return res.status(400).send({
-        error: err.name,
-        message: err.message,
-      });
-    }
-  }
+  return res.status(201).json(newUser);
 };
 
-export default registerUserController;
+export default registerUsercontroller;
